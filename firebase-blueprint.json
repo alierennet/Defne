@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Prompt": {
+      "title": "Prompt",
+      "description": "An image generation prompt definition",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "positivePrompt": { "type": "string" },
+        "negativePrompt": { "type": "string" },
+        "artStyle": { "type": "string" },
+        "lighting": { "type": "string" },
+        "camera": { "type": "string" },
+        "palette": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "positivePrompt", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/prompts/{promptId}": {
+      "schema": "Prompt",
+      "description": "User generated image prompts"
+    }
+  }
+}

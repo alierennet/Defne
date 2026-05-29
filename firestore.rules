@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Security Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidPrompt(data) {
+        return data.keys().hasAll(['positivePrompt', 'userId', 'createdAt']) &&
+               data.positivePrompt is string && data.positivePrompt.size() <= 2000 &&
+               data.negativePrompt is string && data.negativePrompt.size() <= 2000 &&
+               data.userId is string &&
+               data.tags is list && data.tags.size() <= 20 &&
+               data.createdAt is timestamp &&
+               (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+               (!('artStyle' in data) || (data.artStyle is string && data.artStyle.size() <= 100)) &&
+               (!('lighting' in data) || (data.lighting is string && data.lighting.size() <= 100)) &&
+               (!('camera' in data) || (data.camera is string && data.camera.size() <= 100)) &&
+               (!('palette' in data) || (data.palette is string && data.palette.size() <= 100));
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /prompts/{promptId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(promptId);
+      allow create: if isSignedIn() && isValidPrompt(incoming()) && incoming().userId == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if false; // Immutable prompt draft
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}
